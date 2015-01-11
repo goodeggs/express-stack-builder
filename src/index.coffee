@@ -1,42 +1,54 @@
 {DepGraph} = require 'dependency-graph'
 
+expressApiBuilder = (callStack) ->
+  api = {}
+  for method in ['use', 'all', 'get', 'put', 'post', 'delete', 'head', 'options']
+    api[method] = do (method) ->
+      (args...) ->
+        callStack.push [method, args...]
+  api
+
 class ExpressStackBuilder
 
-  constructor: ->
-    @_counter = 0
-    @_graph = new DepGraph
-    @_graph.addNode ':before'
-    @_graph.addNode ':app'
-    @_graph.addNode ':after'
-    @_graph.addDependency ':app', ':before'
-    @_graph.addDependency ':after', ':app'
-    @_calls = {}
+  constructor: (@_graph, @_ns) ->
+    @_graph ?= new DepGraph
+    @_ns ?= {}
+    @_callStacks =
+      beforeAll: []
+      before: []
+      app: []
+      after: []
+      afterAll: []
+    for k, v of @_callStacks when k isnt 'app'
+      @[k] = expressApiBuilder(v)
+    @[name] = fn for name, fn of expressApiBuilder(@_callStacks.app)
 
-  beforeAll: ->
-    use: (args...) =>
-      key = @_use args
-      @_graph.addDependency ':before', key
+  namespace: (ns, dependencies=[]) ->
+    @_graph.addNode ns
+    for dependency in dependencies
+      @_graph.addNode dependency # ensure node exists
+      @_graph.addDependency ns, dependency
+    return @_ns[ns] = new ExpressStackBuilder @_graph, @_ns
 
-  afterAll: ->
-    use: (args...) =>
-      key = @_use args
-      @_graph.addDependency key, ':after'
+  merge: (callObj) ->
+    newObj = {}
+    for k, v of callObj
+      newObj[k] = callObj[k].concat(@_callStacks[k])
+    return newObj
 
-  _use: (args) ->
-    key = "c:#{++@_counter}"
-    @_calls[key] = ['use', args...]
-    @_graph.addNode key
-    return key
+  configure: (express, appFn) ->
+    calls = @_callStacks
+    for ns in @_graph.overallOrder()
+      calls = @_ns[ns].merge calls
 
-  use: (args...) ->
-    key = @_use args
-    @_graph.addDependency ':app', key
+    for stack in ['beforeAll', 'before', 'app']
+      for [fn, args...] in calls[stack]
+        express[fn](args...)
 
-  toArray: ->
-    calls = []
-    for key in @_graph.overallOrder()
-      continue unless (call = @_calls[key])?
-      calls.push call
-    return calls
+    appFn?()
+
+    for stack in ['after', 'afterAll']
+      for [fn, args...] in calls[stack]
+        express[fn](args...)
 
 module.exports = ExpressStackBuilder

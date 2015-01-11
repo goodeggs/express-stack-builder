@@ -18,7 +18,9 @@
   "homepage": "https://github.com/goodeggs/express-stack-builder",
   "bugs": "https://github.com/goodeggs/express-stack-builder/issues",
   "dependencies": {
-    "dependency-graph": "^0.1.0"
+    "dependency-graph": "^0.1.0",
+    "sinon-chai": "^2.6.0",
+    "sinon": "^1.12.2"
   },
   "devDependencies": {
     "coffee-script": "^1.8.0",

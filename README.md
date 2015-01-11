@@ -12,13 +12,56 @@ Express middleware management for complex projects.
 npm install express-stack-builder
 ```
 
+### logger-plugin.js
 ```javascript
-var expressStackBuilder = require('express-stack-builder');
+module.exports = function (builder) {
+  // depends on stats-plugin
+  builder.namespace('logger-plugin', ['stats-plugin'])
+    .beforeAll.use(function(req, res, next) {
+      req.logger = function() {
+        req.stats('foo');
+      };
+      next();
+    });
+};
+```
+
+### stats-plugin.js
+```javascript
+module.exports = function (builder) {
+  builder.namespace('stats-plugin')
+    .beforeAll.use(function(req, res, next) {
+      req.stats = function() { // do something cool };
+      next();
+    });
+};
+```
+
+### app.js
+```javascript
+var builder = require('express-stack-builder');
+var express = require('express');
+require('logger-plugin')(builder);
+require('stats-plugin')(builder); // NOTE: order does not matter
+var app = express();
+builder.configure(app, function() {
+  // all routes will be inserted in an order respecting the dependency tree
+  // defined in your namespace calls.
+
+  // beforeAll
+  // before
+  // app
+  // put your own app routes here
+  app.get('/', function(req, res) { res.send 'hello world' });
+  // after
+  // afterAll
+});
+app.listen(3000);
 ```
 
 ## Contributing
 
-Please follow our [Code of Conduct](https://github.com/goodeggs/mongoose-webdriver/blob/master/CODE_OF_CONDUCT.md)
+Please follow our [Code of Conduct](https://github.com/goodeggs/express-stack-builder/blob/master/CODE_OF_CONDUCT.md)
 when contributing to this project.
 
 ```
