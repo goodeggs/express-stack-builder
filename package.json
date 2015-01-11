@@ -1,0 +1,34 @@
+{
+  "name": "express-stack-builder",
+  "version": "1.0.0",
+  "description": "Express middleware management for complex projects.",
+  "author": "Good Eggs <open-source@goodeggs.com>",
+  "contributors": [
+    "Bob <bob@zoller.us>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "express middleware"
+  ],
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/goodeggs/express-stack-builder.git"
+  },
+  "homepage": "https://github.com/goodeggs/express-stack-builder",
+  "bugs": "https://github.com/goodeggs/express-stack-builder/issues",
+  "dependencies": {
+    "dependency-graph": "^0.1.0"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.8.0",
+    "mocha": "^1.21.5",
+    "chai": "^1.10.0"
+  },
+  "scripts": {
+    "compile": "coffee --bare --compile --output lib/ src/",
+    "prepublish": "npm run compile",
+    "pretest": "npm run compile",
+    "test": "mocha"
+  }
+}
